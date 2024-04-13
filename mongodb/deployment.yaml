@@ -16,18 +16,39 @@ spec:
           image: mongo:4.2.8
           ports:
             - containerPort: 27017
-          envFrom:
-            - secretRef:
-                name: mongodb-secret
+          resources:
+            requests:
+              memory: 256Mi
+              cpu: 1000m
+            limits:
+              memory: 256Mi
+              cpu: 1000m 
 
-          # CONFIGURAÇÕES USANDO CONFIGMAP
-          # envFrom:
-          #   - configMapRef:
-          #       name: mongodb-configmap
-          
-          # CONFIGURAÇÕES CHUMBADAS
+          # CONFIGURAÇÕES COM VARIÁVEIS CHUMBADAS
           # env:
           # - name: MONGO_INITDB_ROOT_USERNAME
           #   value: mongouser
           # - name: MONGO_INITDB_ROOT_PASSWORD
           #   value: mongopwd
+
+          # CONFIGURAÇÕES USANDO CONFIGMAP
+          # envFrom:
+          #   - configMapRef:
+          #       name: mongodb-configmap
+
+          # CONFIGURAÇÕES USANDO SECRET
+          envFrom:
+            - secretRef:
+                name: mongodb-secret
+            
+          volumeMounts:
+            - mountPath: /data/db
+              name: mongo-data
+      volumes:
+        - name: mongo-data
+          persistentVolumeClaim:
+            claimName: host-pvc
+
+          
+          
+          

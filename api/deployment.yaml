@@ -3,6 +3,7 @@ kind: Deployment
 metadata:
   name: api-deployment
 spec:
+  replicas: 2
   selector:
     matchLabels:
       app: api
@@ -19,30 +20,96 @@ spec:
           name: http
         - containerPort: 443
           name: https
-        imagePullPolicy: Always
+        imagePullPolicy: Always #Regra para baixar imagem
+        resources:
+          requests:
+            memory: 128Mi
+            cpu: 250m
+          limits:
+            memory: 128Mi
+            cpu: 500m
+        livenessProbe: 
+          httpGet:
+            path: /health
+            port: 80
+            scheme: HTTP
+          periodSeconds: 10
+          timeoutSeconds: 1
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /read
+            port: 80
+            scheme: HTTP
+          failureThreshold: 3
+          timeoutSeconds: 1
+          successThreshold: 2
+          periodSeconds: 1
+
+        # VARIÁVEIS CHUMBADAS
+        # env:
+        #   - name: Mongo__Host
+        #     value: "mongo-service"
+        #   - name: Mongo__User
+        #     value: "mongouser"
+        #   - name: Mongo__Password
+        #     value: mongopwd   
+        #   - name: Mongo__Port
+        #     value: "27017"
+        #   - name: Mongo__Data
+        #     value: "admin"
+
+        # CONFIGURAÇÕES USANDO CONFIGMAP
         envFrom:
           - configMapRef:
               name: api-configmap
+        # env:
+        #   - name: Mongo__User
+        #     valueFrom:
+        #       configMapKeyRef:
+        #         key: MONGO_INITDB_ROOT_USERNAME
+        #         name: mongodb-configmap 
+        #   - name: Mongo__Password
+        #     valueFrom:
+        #       configMapKeyRef:
+        #         key: MONGO_INITDB_ROOT_PASSWORD
+        #         name: mongodb-configmap
+        
+        # CONFIGURAÇÕES USANDO SECRET
         env:
           - name: Mongo__User
             valueFrom:
               secretKeyRef:
                 key: MONGO_INITDB_ROOT_USERNAME
                 name: mongodb-secret 
-          - name: Mongo_Password
+          - name: Mongo__Password
             valueFrom:
               secretKeyRef:
                 key: MONGO_INITDB_ROOT_PASSWORD
                 name: mongodb-secret
-                
-        # CONFIGURAÇÕES USANDO CONFIGMAP
-        # - name: Mongo__User
-        #   valueFrom:
-        #     configMapKeyRef:
-        #       key: MONGO_INITDB_ROOT_USERNAME
-        #       name: mongodb-configmap 
-        # - name: Mongo_Password
-        #   valueFrom:
-        #     configMapKeyRef:
-        #       key: MONGO_INITDB_ROOT_PASSWORD
-        #       name: mongodb-configmap
+          
+        
+    
+      # affinity:
+      #   podAffinity:
+      #     preferredDuringSchedulingIgnoredDuringExecution:
+      #       - weight: 1
+      #         podAffinityTerm:
+      #           topologyKey: kubernetes.io/hostname
+      #           labelSelector:
+      #             matchExpressions:
+      #               - key: app
+      #                 operator: In
+      #                 values:
+      #                   - "mongodb"
+      #   podAntiAffinity:
+      #     preferredDuringSchedulingIgnoredDuringExecution:
+      #       - weight: 2
+      #         podAffinityTerm:
+      #           topologyKey: kubernetes.io/hostname
+      #           labelSelector:
+      #             matchExpressions:
+      #               - key: app
+      #                 operator: In
+      #                 values:
+      #                   - "api"
