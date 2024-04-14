@@ -3,6 +3,7 @@ kind: Deployment
 metadata:
   name: mongodb-deployment
 spec:
+  replicas: 1
   selector:
     matchLabels:
       app: mongodb
@@ -46,8 +47,17 @@ spec:
               name: mongo-data
       volumes:
         - name: mongo-data
-          persistentVolumeClaim:
-            claimName: host-pvc
+          # O CORRETO É USAR PERSIST VOLUME CLAIM
+          # persistentVolumeClaim:
+          #   claimName: host-pvc
+
+          # USANDO HOST PATH PARA DEMONSTRAÇÃO - OS SISTEMAS DE ARQUIVOS FICAM DENTRO DO NÓ ONDE O POD ESTA SENDO EXECUTADO
+          hostPath:
+            path: /volumes/mongodb
+            
+      # Usando selector para definir onde os pods devem ser executados.
+      # nodeSelector:
+      #   database: mongodb
 
           
           
